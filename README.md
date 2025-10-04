@@ -1,0 +1,2 @@
+# simpleCoinGame
+simple game
