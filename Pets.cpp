@@ -1,5 +1,5 @@
 #include "Pets.hpp"
 
 void Pets::update(){
-	posX++;
+//	Pets::destR.x++;
 };

@@ -10,7 +10,8 @@
 #include "TextureManager.hpp"
 #include "Camera.hpp"
 #include "Textures.hpp"
-//#include "Pets.hpp"
+#include "Pets.hpp"
+#include "Coins.hpp"
 
 struct Program{
 	SDL_Renderer *renderer[2];

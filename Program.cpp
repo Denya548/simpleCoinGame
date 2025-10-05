@@ -5,7 +5,8 @@ using namespace std;
 SDL_Event event;
 int mousePos[2];
 Textures textures;
-Pets pet;
+Pets pets;
+Coin coins;
 
 void Program::init(const char *title, int posX, int posY, int width, int height, bool fullscrean){
 	if(SDL_Init(SDL_INIT_EVERYTHING) == 0){
@@ -18,7 +19,7 @@ void Program::init(const char *title, int posX, int posY, int width, int height,
 		
 		SDL_HideWindow(windows[1]);
 
-		Textures::loadTextures(renderer[0], &textures);	
+		textures.loadTextures(renderer[0], &textures);	
 	}
 }
 
@@ -28,7 +29,7 @@ void Program::update(){
 	mouseState = SDL_GetMouseState(&mousePos[0], &mousePos[1]);
 	frame++;
 
-	pet.update();
+	pets.update();
 }
 
 void Program::handleEvents()
@@ -65,14 +66,14 @@ void Program::handleEvents()
 SDL_Rect destR = {0, 0, 100, 100}; 
 
 void Program::render(){
-	SDL_SetRenderDrawColor(renderer[0], 32, 128 + 64, 32, 0);
+	SDL_SetRenderDrawColor(renderer[0], 0, 0, 0, 0);
 	SDL_RenderClear(renderer[0]);
 
-	SDL_SetRenderDrawColor(renderer[1], 64, 128 + 64, 64, 0);
+	SDL_SetRenderDrawColor(renderer[1], 0, 0, 0, 0);
 	SDL_RenderClear(renderer[1]);
 	//-------------------------------
-	SDL_RenderCopy(renderer[0], textures.cat, NULL, &destR);
-
+	SDL_RenderCopy(renderer[0], textures.cat, NULL, &pets.destR);
+	coins.render(renderer[0], textures.coin, &coins.destR);
 	//-------------------------------
 	SDL_RenderPresent(renderer[0]);
 	SDL_RenderPresent(renderer[1]);
@@ -86,4 +87,4 @@ void Program::clean(){
     SDL_Quit();
  }
 
-//g++ Program.cpp main.cpp TextureManager.cpp Texture.cpp Pets.cpp -o main -lSDL2 -lSDL2_image
+//g++ Program.cpp main.cpp TextureManager.cpp Textures.cpp Pets.cpp Coins.cpp -o main -lSDL2 -lSDL2_image

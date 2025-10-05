@@ -3,6 +3,7 @@
 
 struct Textures{
 	SDL_Texture* cat;
-	static void loadTextures(SDL_Renderer *rend, Textures *tex);
+	SDL_Texture* coin;
+	void loadTextures(SDL_Renderer *rend, Textures *tex);
 };
 
