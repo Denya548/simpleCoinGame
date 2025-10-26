@@ -1,8 +1,9 @@
 #pragma once
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include <vector>
-#include <cstdlib>
+#include <cstdlib> //rand
 #include <cmath>
 #include <ctime>
 #include <string>
@@ -12,8 +13,11 @@
 #include "Textures.hpp"
 #include "Pets.hpp"
 #include "Coins.hpp"
+#include "Functions.hpp"
+#include "Inventory.hpp"
 
 struct Program{
+	static int money;
 	SDL_Renderer *renderer[2];
 	SDL_Window *windows[2];
 	bool isRunning;
