@@ -14,12 +14,14 @@ SDL_Event event;
 TTF_Font* font;
 Textures textures;
 Textures textures2;
+
 int mousePos[2];
+Uint32 mouseState;
 
 const int coinsNum = 99; 
 Coin coins[coinsNum];
 
-vector<Pets> pets; //pets pool
+vector<Pets *> pets; //pets pool
 vector<Pets> myPets(10); // pets in inventry
 
 //TEXT RENDER
@@ -39,6 +41,12 @@ void renderText(SDL_Renderer* rend, TTF_Font* font, string text, int posX, int p
 	SDL_RenderCopy(rend, textTexture, NULL, &textRect);
 }
 
+// stats bar position
+int petsStatsPosX = 10;
+int petsStatsPosY = 10;
+Pets lastPet;
+int lastTail = 0;
+
 //GUI RENDER
 void renderUI(SDL_Renderer* rend[]){
 	SDL_SetRenderDrawColor(rend[0], 255, 255, 255, 0);
@@ -52,6 +60,17 @@ void renderUI(SDL_Renderer* rend[]){
 	SDL_RenderDrawRect(rend[1], &rect);
 	//text
 	renderText(rend[1], font, "Inventory", 10, 10);
+	//pets stats
+	//if(lastPet != NULL){
+		renderText(rend[1], font, "strength: " + to_string(lastPet.strength), petsStatsPosX, petsStatsPosY + 24);
+		renderText(rend[1], font, "multiply: " + to_string(int((lastPet.coinMultiply - 1) * 100)) + " %", petsStatsPosX, petsStatsPosY + 24 * 2);
+		renderText(rend[1], font, "speed: " + to_string(lastPet.speed), petsStatsPosX, petsStatsPosY + 24 * 3);
+		/*renderText(rend[1], font, "multiply: " + to_string(int((pets.coinMultiply - 1) * 100)) + " %", pets.destR.x, pets.destR.y + 84 + 24);
+		renderText(rend[1], font, "delay: " + to_string(pets.delay) + " m/s", pets.destR.x, pets.destR.y + 84 + 24 * 2);
+		renderText(rend[1], font, "speed: " + to_string(pets.speed), pets.destR.x, pets.destR.y + 84 + 24 * 3);
+		renderText(rend[1], font, "Money multiply: " + to_string(int((pets.moneyMultiply) * 100)) + " %", pets.destR.x, pets.destR.y + 84 + 24 * 4);
+		*/
+	//}
 
 	//BOTTOM RECT
 	rect = {0, 1920 / 2 - 120, 1080 / 2, 120};
@@ -64,10 +83,26 @@ void renderUI(SDL_Renderer* rend[]){
 	int maxColumns = Inventory::rowSize;
 	for(int i = 0; i < myPets.size(); i++){
 		SDL_RenderDrawRect(rend[1], &rect);
-		if(currentWindow == 1 && rect.x < mousePos[0] && mousePos[0] < rect.x + rect.w &&
-			 rect.y < mousePos[1] && mousePos[1] < rect.y + rect.h){
-			SDL_RenderCopy(rend[1], textures2.cat, NULL, &rect);
+
+		//choised tail
+		if(i == lastTail){
+			SDL_RenderFillRect(rend[1], &rect);
 		}
+
+		//tails
+		SDL_RenderCopy(rend[1], myPets[i].texture, NULL, &rect);
+		if(currentWindow == 1 && rect.x < mousePos[0] && mousePos[0] < rect.x + rect.w &&
+				rect.y < mousePos[1] && mousePos[1] < rect.y + rect.h){
+			SDL_RenderCopy(rend[1], myPets[i].texture, NULL, &rect);
+			lastPet = myPets[i]; 
+			lastTail = i; 
+
+			if(mouseState == 1){ //equck pet
+				pets[0] = &myPets[i];	
+			}
+		}
+
+		//next colums
 		currentColumns += 1;
 		if(currentColumns >= maxColumns){
 			currentColumns = 0;
@@ -75,7 +110,6 @@ void renderUI(SDL_Renderer* rend[]){
 		}
 		rect = {Inventory::tailSize * currentColumns, 240 + Inventory::tailSize * currentRow, Inventory::tailSize, Inventory::tailSize};
 	}
-	//printf("%d\n", coinsNum);
 }
 
 //INIT
@@ -100,24 +134,29 @@ void Program::init(const char *title, int posX, int posY, int width, int height,
 		font = TTF_OpenFont("text.ttf", 24);
 
 		//---------------------------
-		Pets cat;
-		Pets dog;
-		dog.movement = true;
+		for(int i = 0; i < 10; i++){
+			myPets[i].texture = textures2.pets[i];
+			myPets[i].ID = i;
+		}
+
+		pets.push_back(&myPets[3]);
+		/*dog.movement = true;
 		dog.homePos[0] += 128;
 		dog.endPos[0] += 128;
 		dog.speed -= 1;
+		*/
 
-		pets.push_back(cat);
-		pets.push_back(dog);
 
 		for(int i = 0; i < coinsNum; i++){
 			coins[i].destR.x = 64 + (rand() % (1080 / 2 - 128 - 64));
 			coins[i].destR.y = 120 + (rand() % (1920 / 2 - 240 - 64));
 		}
+
+		myPets[3].strength = 10;
+		myPets[3].speed = 10;
 	}
 }
 
-Uint32 mouseState;
 
 //UPDATE
 void Program::update(){
@@ -126,24 +165,29 @@ void Program::update(){
 	//printf("%d\n", currentWindow);
 
 	//INPUT UPDATE
-	if(mouseState == 1 && currentWindow == 0){		// IF MOUSE POS == COIN POS ITS RETURN TRUE
-		//Inventory::size--;
-		for(int i = 0; i < coinsNum; i++){
-			if(coins[i].clickCheck(mousePos)){
-				for(int p = 0; p < pets.size(); p++){ 
-					pets[p].endPos[0] = coins[i].destR.x - 64 + 128 * p;
-					pets[p].endPos[1] = coins[i].destR.y;
+	if(mouseState == 1){		// IF MOUSE POS == COIN POS ITS RETURN TRUE
+		if(currentWindow == 0){	
+			//Inventory::size--;
+			for(int i = 0; i < coinsNum; i++){
+				if(coins[i].clickCheck(mousePos)){
+					for(int p = 0; p < pets.size(); p++){ 
+						pets[p]->endPos[0] = coins[i].destR.x - 64 + 128 * p;
+						pets[p]->endPos[1] = coins[i].destR.y;
 
-					pets[p].movement = true;
-					pets[p].coinMoney = &coins[i].money;
+						pets[p]->movement = true;
+						pets[p]->coinMoney = &coins[i].money;
+					}
 				}
 			}
+		}
+		else if(currentWindow == 1){
+			//2
 		}
 	}
 	
 	//OBJECTS UPDATE
 	for(int i = 0; i < pets.size(); i++){
-		pets[i].update();
+		pets[i]->update();
 	}
 
 	for(int i = 0; i < coinsNum; i++){
@@ -178,14 +222,8 @@ void Program::render(){
 
 	//pets
 	for(int i = 0; i < pets.size(); i++){
-		SDL_RenderCopy(renderer[0], textures.cat, NULL, &pets[i].destR);
+		SDL_RenderCopy(renderer[0], textures.pets[pets[i]->ID], NULL, &pets[i]->destR); //with ID beacouse renderers diferets
 	}
-	//renderText(renderer[0], font, "strength: " + to_string(pets[0].strength), pets[0].destR.x, pets[0].destR.y + 84);
-	/*renderText(renderer[0], font, "multiply: " + to_string(int((pets.coinMultiply - 1) * 100)) + " %", pets.destR.x, pets.destR.y + 84 + 24);
-	renderText(renderer[0], font, "delay: " + to_string(pets.delay) + " m/s", pets.destR.x, pets.destR.y + 84 + 24 * 2);
-	renderText(renderer[0], font, "speed: " + to_string(pets.speed), pets.destR.x, pets.destR.y + 84 + 24 * 3);
-	renderText(renderer[0], font, "Money multiply: " + to_string(int((pets.moneyMultiply) * 100)) + " %", pets.destR.x, pets.destR.y + 84 + 24 * 4);
-	*/
 
 	//-------------------------------
 	SDL_RenderPresent(renderer[0]);
@@ -198,6 +236,10 @@ void Program::clean(){
     SDL_DestroyWindow(windows[1]);
     SDL_DestroyRenderer(renderer[0]);
     SDL_DestroyRenderer(renderer[1]);
+
+	TTF_CloseFont(font);
+	TTF_Quit();
+
     SDL_Quit();
  }
 
